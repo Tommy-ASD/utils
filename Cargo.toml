@@ -13,3 +13,4 @@ calamine = "0.21.2"
 chrono = { version = "0.4.26", features = ["serde"] }
 email_address = "0.2.4"
 tokio = { version = "1.29.1", features = ["full"] }
+no-panic = "0.1.26"
