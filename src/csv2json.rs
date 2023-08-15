@@ -1,5 +1,4 @@
 use csv::Reader;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use crate::error_types::TracebackError;
@@ -11,9 +10,6 @@ use crate::error_types::TracebackError;
 /// Should these assumptions not be true, this function will return an error.
 /// NOTE: Some data will be lost in the conversion from csv to json.
 /// This happens because serde_json automatically sorts the CSV headers alphabetically.
-/// #PANICS
-/// This function should not panic under any circumstances, verified by no_panic.
-#[no_panic::no_panic]
 pub fn csv_to_json<T: std::io::Read>(
     mut csv: Reader<T>,
 ) -> Result<serde_json::Value, TracebackError> {
@@ -43,9 +39,20 @@ pub fn csv_to_json<T: std::io::Read>(
         };
         let mut obj = serde_json::Map::new();
         for (i, header) in headers.iter().enumerate() {
+            let current_rec = match record.get(i) {
+                Some(current_rec) => current_rec,
+                None => {
+                    return Err(TracebackError::new(
+                        "Failed to get current record".to_string(),
+                        file!().to_string(),
+                        line!(),
+                    )
+                    .with_extra_data(json!({ "record": format!("{:?}", record) })))
+                }
+            };
             obj.insert(
                 header.to_string(),
-                serde_json::Value::String(record[i].to_string()),
+                serde_json::Value::String(current_rec.to_string()),
             );
         }
         records.push(serde_json::Value::Object(obj));
@@ -55,19 +62,93 @@ pub fn csv_to_json<T: std::io::Read>(
 
 pub fn json_to_csv<'a>(json: Value) -> Result<String, TracebackError> {
     let mut wtr = csv::Writer::from_writer(vec![]);
-    let headers = json[0].as_object().unwrap().keys();
+    let zeroth = match json.get(0) {
+        Some(zeroth) => zeroth,
+        None => {
+            return Err(TracebackError::new(
+                "Failed to get zeroth element of json array".to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_extra_data(json!({ "json": json.to_string() })))
+        }
+    };
+    let obj = match zeroth.as_object() {
+        Some(obj) => obj,
+        None => {
+            return Err(TracebackError::new(
+                "Failed to get zeroth element of json array as object".to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_extra_data(json!({ "json": json.to_string() })))
+        }
+    };
+    let headers = obj.keys();
     let mut collected_headers: Vec<String> = headers
         .cloned()
         // sort alphabetically
         .collect::<Vec<String>>();
     collected_headers.sort();
-    wtr.write_record(&collected_headers).unwrap();
-    for record in json.as_array().unwrap() {
+    match wtr.write_record(&collected_headers) {
+        Ok(_) => (),
+        Err(e) => {
+            return Err(TracebackError::new(
+                "Failed to write CSV headers".to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_extra_data(json!({ "error": e.to_string() })))
+        }
+    }
+    let arr = match json.as_array() {
+        Some(arr) => arr,
+        None => {
+            return Err(TracebackError::new(
+                "Failed to get json as array".to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_extra_data(json!({ "json": json.to_string() })))
+        }
+    };
+    for record in arr {
         let mut row = Vec::new();
         for header in &collected_headers {
-            row.push(record[header].as_str().unwrap());
+            let value = match record.get(header) {
+                Some(value) => value,
+                None => {
+                    return Err(TracebackError::new(
+                        "Failed to get value from json record".to_string(),
+                        file!().to_string(),
+                        line!(),
+                    )
+                    .with_extra_data(json!({ "json": json.to_string() })))
+                }
+            };
+            match value.as_str() {
+                Some(value) => row.push(value),
+                None => {
+                    return Err(TracebackError::new(
+                        "Failed to parse value from json record as string".to_string(),
+                        file!().to_string(),
+                        line!(),
+                    )
+                    .with_extra_data(json!({ "json": json.to_string() })))
+                }
+            };
         }
-        wtr.write_record(row).unwrap();
+        match wtr.write_record(row) {
+            Ok(_) => (),
+            Err(e) => {
+                return Err(TracebackError::new(
+                    "Failed to write CSV record".to_string(),
+                    file!().to_string(),
+                    line!(),
+                )
+                .with_extra_data(json!({ "error": e.to_string() })))
+            }
+        };
     }
     let inner = match wtr.into_inner() {
         Ok(inner) => inner,
@@ -118,11 +199,6 @@ pub fn csv_file_to_json(path: &str) -> Result<serde_json::Value, TracebackError>
         )
         .with_parent(e)),
     }
-}
-
-#[no_panic::no_panic]
-pub fn panics() {
-    panic!()
 }
 
 pub struct Person {
