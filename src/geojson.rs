@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use crate::error_types::TracebackError;
+use crate::{error_types::TracebackError, traceback};
 /*
 This function takes in a set of coordinates in the following format:
 [
@@ -27,12 +27,7 @@ pub fn coords_to_vec(coordinates: &Vec<Value>) -> Result<Vec<Vec<Vec<f64>>>, Tra
 fn map_to_vec(c: &Value) -> Result<Vec<Vec<f64>>, TracebackError> {
     c.as_array()
         .ok_or_else(|| {
-            TracebackError::new(
-                "Expected an array as a parameter".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "c": c }))
+            traceback!("Expected an array as a parameter").with_extra_data(json!({ "c": c }))
         })
         .and_then(|a| a.iter().map(map_to_vec_inner).collect())
 }
@@ -44,12 +39,7 @@ fn map_to_vec(c: &Value) -> Result<Vec<Vec<f64>>, TracebackError> {
 fn map_to_vec_inner(c: &Value) -> Result<Vec<f64>, TracebackError> {
     c.as_array()
         .ok_or_else(|| {
-            TracebackError::new(
-                "Expected an array as a parameter".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "c": c }))
+            traceback!("Expected an array as a parameter").with_extra_data(json!({ "c": c }))
         })
         .map(|a| a.iter().map(|c| c.as_f64().unwrap_or(0.0)).collect())
 }

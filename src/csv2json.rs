@@ -1,7 +1,7 @@
 use csv::Reader;
 use serde_json::{json, Value};
 
-use crate::error_types::TracebackError;
+use crate::{error_types::TracebackError, traceback};
 
 /// This function takes in a csv::Reader<&[u8]> and returns a serde_json::Value
 /// It assumes that the first row of the csv is the header row, and that all
@@ -16,12 +16,8 @@ pub fn csv_to_json<T: std::io::Read>(
     let headers = match csv.headers().cloned() {
         Ok(headers) => headers,
         Err(e) => {
-            return Err(TracebackError::new(
-                "Failed to read CSV headers".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "error": e.to_string() })))
+            return Err(traceback!("Failed to read CSV headers")
+                .with_extra_data(json!({ "error": e.to_string() })))
         }
     };
     let mut records = Vec::new();
@@ -29,12 +25,8 @@ pub fn csv_to_json<T: std::io::Read>(
         let record = match result {
             Ok(record) => record,
             Err(e) => {
-                return Err(TracebackError::new(
-                    "Failed to read CSV record".to_string(),
-                    file!().to_string(),
-                    line!(),
-                )
-                .with_extra_data(json!({ "error": e.to_string() })))
+                return Err(traceback!("Failed to read CSV record")
+                    .with_extra_data(json!({ "error": e.to_string() })))
             }
         };
         let mut obj = serde_json::Map::new();
@@ -42,12 +34,8 @@ pub fn csv_to_json<T: std::io::Read>(
             let current_rec = match record.get(i) {
                 Some(current_rec) => current_rec,
                 None => {
-                    return Err(TracebackError::new(
-                        "Failed to get current record".to_string(),
-                        file!().to_string(),
-                        line!(),
-                    )
-                    .with_extra_data(json!({ "record": format!("{:?}", record) })))
+                    return Err(traceback!("Failed to get current record")
+                        .with_extra_data(json!({ "record": format!("{:?}", record) })))
                 }
             };
             obj.insert(
@@ -65,23 +53,17 @@ pub fn json_to_csv<'a>(json: Value) -> Result<String, TracebackError> {
     let zeroth = match json.get(0) {
         Some(zeroth) => zeroth,
         None => {
-            return Err(TracebackError::new(
-                "Failed to get zeroth element of json array".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "json": json.to_string() })))
+            return Err(traceback!("Failed to get zeroth element of json array")
+                .with_extra_data(json!({ "json": json.to_string() })))
         }
     };
     let obj = match zeroth.as_object() {
         Some(obj) => obj,
         None => {
-            return Err(TracebackError::new(
-                "Failed to get zeroth element of json array as object".to_string(),
-                file!().to_string(),
-                line!(),
+            return Err(
+                traceback!("Failed to get zeroth element of json array as object")
+                    .with_extra_data(json!({ "json": json.to_string() })),
             )
-            .with_extra_data(json!({ "json": json.to_string() })))
         }
     };
     let headers = obj.keys();
@@ -93,23 +75,15 @@ pub fn json_to_csv<'a>(json: Value) -> Result<String, TracebackError> {
     match wtr.write_record(&collected_headers) {
         Ok(_) => (),
         Err(e) => {
-            return Err(TracebackError::new(
-                "Failed to write CSV headers".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "error": e.to_string() })))
+            return Err(traceback!("Failed to write CSV headers")
+                .with_extra_data(json!({ "error": e.to_string() })))
         }
     }
     let arr = match json.as_array() {
         Some(arr) => arr,
         None => {
-            return Err(TracebackError::new(
-                "Failed to get json as array".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "json": json.to_string() })))
+            return Err(traceback!("Failed to get json as array")
+                .with_extra_data(json!({ "json": json.to_string() })))
         }
     };
     for record in arr {
@@ -118,58 +92,40 @@ pub fn json_to_csv<'a>(json: Value) -> Result<String, TracebackError> {
             let value = match record.get(header) {
                 Some(value) => value,
                 None => {
-                    return Err(TracebackError::new(
-                        "Failed to get value from json record".to_string(),
-                        file!().to_string(),
-                        line!(),
-                    )
-                    .with_extra_data(json!({ "json": json.to_string() })))
+                    return Err(traceback!("Failed to get value from json record")
+                        .with_extra_data(json!({ "json": json.to_string() })))
                 }
             };
             match value.as_str() {
                 Some(value) => row.push(value),
                 None => {
-                    return Err(TracebackError::new(
-                        "Failed to parse value from json record as string".to_string(),
-                        file!().to_string(),
-                        line!(),
+                    return Err(
+                        traceback!("Failed to parse value from json record as string")
+                            .with_extra_data(json!({ "json": json.to_string() })),
                     )
-                    .with_extra_data(json!({ "json": json.to_string() })))
                 }
             };
         }
         match wtr.write_record(row) {
             Ok(_) => (),
             Err(e) => {
-                return Err(TracebackError::new(
-                    "Failed to write CSV record".to_string(),
-                    file!().to_string(),
-                    line!(),
-                )
-                .with_extra_data(json!({ "error": e.to_string() })))
+                return Err(traceback!("Failed to write CSV record")
+                    .with_extra_data(json!({ "error": e.to_string() })))
             }
         };
     }
     let inner = match wtr.into_inner() {
         Ok(inner) => inner,
         Err(e) => {
-            return Err(TracebackError::new(
-                "Failed to convert CSV writer to inner".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "error": e.to_string() })))
+            return Err(traceback!("Failed to convert CSV writer to inner")
+                .with_extra_data(json!({ "error": e.to_string() })))
         }
     };
     match String::from_utf8(inner) {
         Ok(string) => Ok(string),
         Err(e) => {
-            return Err(TracebackError::new(
-                "Failed to convert CSV writer to string".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "error": e.to_string() })))
+            return Err(traceback!("Failed to convert CSV writer to string")
+                .with_extra_data(json!({ "error": e.to_string() })))
         }
     }
 }
@@ -182,22 +138,13 @@ pub fn csv_file_to_json(path: &str) -> Result<serde_json::Value, TracebackError>
     let rdr = match csv::Reader::from_path(path) {
         Ok(rdr) => rdr,
         Err(e) => {
-            return Err(TracebackError::new(
-                "Failed to read CSV file".to_string(),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({ "error": e.to_string() })))
+            return Err(traceback!("Failed to read CSV file")
+                .with_extra_data(json!({ "error": e.to_string() })))
         }
     };
     match csv_to_json(rdr) {
         Ok(json) => Ok(json),
-        Err(e) => Err(TracebackError::new(
-            "Failed to parse CSV to json".to_string(),
-            file!().to_string(),
-            line!(),
-        )
-        .with_parent(e)),
+        Err(e) => Err(traceback!("Failed to parse CSV to json").with_parent(e)),
     }
 }
 

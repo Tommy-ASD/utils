@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde_json::json;
 
-use crate::error_types::TracebackError;
+use crate::{error_types::TracebackError, traceback};
 
 pub enum Method {
     GET,
@@ -43,12 +43,7 @@ where
     let request = match request {
         Ok(r) => r,
         Err(e) => {
-            return Err(TracebackError::new(
-                format!("Error building request"),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({
+            return Err(traceback!("Error building request").with_extra_data(json!({
                 "url": url,
                 "error": format!("{}", e),
                 "headers": headers,
@@ -59,28 +54,20 @@ where
     let response = match client.execute(request).await {
         Ok(r) => r,
         Err(e) => {
-            return Err(TracebackError::new(
-                format!("Error executing request"),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({
-                "url": url,
-                "error": format!("{}", e),
-                "headers": headers,
-                "body": body
-            })));
+            return Err(
+                traceback!("Error executing request").with_extra_data(json!({
+                    "url": url,
+                    "error": format!("{}", e),
+                    "headers": headers,
+                    "body": body
+                })),
+            );
         }
     };
     let response = match response.text().await {
         Ok(r) => r,
         Err(e) => {
-            return Err(TracebackError::new(
-                format!("Error reading response"),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({
+            return Err(traceback!("Error reading response").with_extra_data(json!({
                 "url": url,
                 "error": format!("{}", e),
                 "headers": headers,
@@ -91,12 +78,7 @@ where
     let response: T = match serde_json::from_str(&response) {
         Ok(r) => r,
         Err(e) => {
-            return Err(TracebackError::new(
-                format!("Error parsing response"),
-                file!().to_string(),
-                line!(),
-            )
-            .with_extra_data(json!({
+            return Err(traceback!("Error parsing response").with_extra_data(json!({
                 "url": url,
                 "error": format!("{}", e),
                 "headers": headers,
