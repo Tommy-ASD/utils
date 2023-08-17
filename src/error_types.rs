@@ -316,7 +316,7 @@ macro_rules! traceback {
     };
     (err $e:expr) => {
         $crate::error_types::TracebackError::new(
-            e.message.to_string(),
+            $e.message.to_string(),
             file!().to_string(),
             line!(),
         )
