@@ -83,7 +83,6 @@ impl Drop for TracebackError {
         if self.is_parent || self.is_handled || self.is_default {
             return;
         }
-        println!("Dropping error");
         let mut this = std::mem::take(self);
         this.is_handled = true;
         if let Ok(_) = Handle::try_current() {
