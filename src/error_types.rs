@@ -314,9 +314,13 @@ macro_rules! traceback {
     ($msg:expr) => {
         $crate::error_types::TracebackError::new($msg.to_string(), file!().to_string(), line!())
     };
-    ($e:expr) => {
-        $crate::error_types::TracebackError::new("".to_string(), file!().to_string(), line!())
-            .with_parent($e)
+    (err $e:expr) => {
+        $crate::error_types::TracebackError::new(
+            e.message.to_string(),
+            file!().to_string(),
+            line!(),
+        )
+        .with_parent($e)
     };
     ($e:expr, $msg:expr) => {
         $crate::error_types::TracebackError::new($msg.to_string(), file!().to_string(), line!())
