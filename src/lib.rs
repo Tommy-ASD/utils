@@ -24,9 +24,21 @@ pub fn input() -> String {
 /// Example:
 /// ```
 /// let x = 5;
-/// get_type_of(&x);
+/// type_of(&x);
 /// // Returns "i32"
 /// ```
-pub fn get_type_of<T>(_: &T) -> &'static str {
+pub fn type_of<T>(_: T) -> &'static str {
     std::any::type_name::<T>()
+}
+
+/// Gets the type of a value as a string,
+/// and prints it.
+/// Example:
+/// ```
+/// let x = 5;
+/// print_type_of(&x);
+/// // Prints "i32"
+/// ```
+pub fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>());
 }
