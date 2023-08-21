@@ -18,3 +18,14 @@ pub fn input() -> String {
     }
     line.trim().to_string()
 }
+
+/// Prints the type of a value
+/// Example:
+/// ```
+/// let x = 5;
+/// print_type_of(&x);
+/// // Prints "i32"
+/// ```
+pub fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}

@@ -16,7 +16,6 @@ use tokio::{runtime::Handle, task};
 // but i don't think i could do it justice
 // I am sorry
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[repr(C)]
 pub struct TracebackError {
     pub message: String,
     pub file: String,
