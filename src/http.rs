@@ -1,9 +1,14 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+};
 
 use serde_json::json;
 
 use crate::{error_types::TracebackError, traceback};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub enum Method {
     GET,
     POST,
@@ -11,6 +16,19 @@ pub enum Method {
     DELETE,
     HEAD,
     PATCH,
+}
+
+impl Display for Method {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Method::GET => write!(f, "GET"),
+            Method::POST => write!(f, "POST"),
+            Method::PUT => write!(f, "PUT"),
+            Method::DELETE => write!(f, "DELETE"),
+            Method::HEAD => write!(f, "HEAD"),
+            Method::PATCH => write!(f, "PATCH"),
+        }
+    }
 }
 
 pub async fn attempt_fetch_and_parse<T>(
