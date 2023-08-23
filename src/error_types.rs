@@ -320,10 +320,10 @@ macro_rules! traceback {
             file!().to_string(),
             line!(),
         )
-        .with_parent($e.clone())
+        .with_parent($e)
     };
     ($e:expr, $msg:expr) => {
         $crate::error_types::TracebackError::new($msg.to_string(), file!().to_string(), line!())
-            .with_parent($e.clone())
+            .with_parent($e)
     };
 }
