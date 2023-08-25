@@ -9,6 +9,8 @@ use std::{
 };
 use tokio::{runtime::Handle, task};
 
+use crate::{sync_if_no_runtime, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
+
 // This struct is getting messier by the minute
 // To whoever's job it becomes refactoring this:
 // Please accept my apologies, and good luck
@@ -85,11 +87,20 @@ impl Drop for TracebackError {
         }
         let mut this = std::mem::take(self);
         this.is_handled = true;
-        if let Ok(_) = Handle::try_current() {
-            task::spawn(async move { warn_devs(this).await });
-        } else {
-            warn_devs_sync(this);
-        };
+        unsafe {
+            let callback: Option<&mut TracebackCallbackType> = TRACEBACK_ERROR_CALLBACK.as_mut();
+            match callback {
+                Some(TracebackCallbackType::Async(ref mut f)) => {
+                    sync_if_no_runtime!(f.call(this));
+                }
+                Some(TracebackCallbackType::Sync(ref mut f)) => {
+                    f.call(this);
+                }
+                None => {
+                    sync_if_no_runtime!(warn_devs(this));
+                }
+            }
+        }
     }
 }
 
