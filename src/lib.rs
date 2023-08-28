@@ -91,37 +91,60 @@ pub fn set_default_traceback_callback() {
 macro_rules! set_traceback {
     ($callback:ident) => {
         paste::paste! {
+            // Retrieve line and file information
+            let _LINE: u32 = line!();
+            let _FILE: &'static str = file!();
+
             // Generate a unique identifier for the struct
             #[allow(non_camel_case_types)]
-            struct [<$callback _ TempStruct>];
+            mod [<_private_ $callback _ TempStruct>] {
+                struct [<$callback _ TempStruct>];
 
-            impl $crate::TracebackCallback for [<$callback _ TempStruct>] {
-                fn call(&self, error: $crate::error_types::TracebackError) {
-                    $callback(error)
+                impl $crate::TracebackCallback for [<$callback _ TempStruct>] {
+                    fn call(&self, error: $crate::error_types::TracebackError) {
+                        super::$callback(error)
+                    }
                 }
             }
 
-            $crate::set_traceback_callback($crate::TracebackCallbackType::Sync(Box::new([<$callback _ TempStruct>])));
+            // Expose the generated struct through a function
+            pub fn [<$callback _ temp_struct>]() -> [<_private_ $callback _ TempStruct>]::[<$callback _ TempStruct>] {
+                [<_private_ $callback _ TempStruct>]::[<$callback _ TempStruct>]
+            }
+
+            // Call the macro to set the traceback callback
+            $crate::set_traceback_callback($crate::TracebackCallbackType::Sync(Box::new([<$callback _ temp_struct>]())));
         }
     };
     (async $callback:ident) => {
         paste::paste! {
+            // Retrieve line and file information
+            let _LINE: u32 = line!();
+            let _FILE: &'static str = file!();
             // Generate a unique identifier for the struct
             #[allow(non_camel_case_types)]
-            struct [<$callback _ TempStruct>];
+            mod [<_private_ $callback _ TempStruct>] {
+                struct [<$callback _ TempStruct>];
 
-            impl $crate::TracebackCallbackAsync for [<$callback _ TempStruct>] {
-                fn call(
-                    &self,
-                    error: $crate::error_types::TracebackError,
-                ) -> std::pin::Pin<
-                    Box<dyn std::future::Future<Output = ()> + std::marker::Send + std::marker::Sync>,
-                > {
-                    Box::pin($callback(error))
+                impl $crate::TracebackCallbackAsync for [<$callback _ TempStruct>] {
+                    fn call(
+                        &self,
+                        error: $crate::error_types::TracebackError,
+                    ) -> std::pin::Pin<
+                        Box<dyn std::future::Future<Output = ()> + std::marker::Send + std::marker::Sync>,
+                    > {
+                        Box::pin(super::$callback(error))
+                    }
                 }
             }
 
-            $crate::set_traceback_callback($crate::TracebackCallbackType::Async(Box::new([<$callback _ TempStruct>])));
+            // Expose the generated struct through a function
+            pub fn [<$callback _ temp_struct>]() -> [<_private_ $callback _ TempStruct>]::[<$callback _ TempStruct>] {
+                [<_private_ $callback _ TempStruct>]::[<$callback _ TempStruct>]
+            }
+
+            // Call the macro to set the traceback callback
+            $crate::set_traceback_callback($crate::TracebackCallbackType::Async(Box::new([<$callback _ temp_struct>]())));
         }
     };
 }
