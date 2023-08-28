@@ -14,4 +14,5 @@ chrono = { version = "0.4.26", features = ["serde"] }
 email_address = "0.2.4"
 tokio = { version = "1.29.1", features = ["full"] }
 reqwest = "0.11.18"
+paste = "1.0.14"
 # no-panic = "0.1.26"

@@ -79,6 +79,49 @@ pub fn set_traceback_callback(callback: TracebackCallbackType) {
     }
 }
 
-pub fn init() {
+pub fn set_default_traceback_callback() {
     set_traceback_callback(TracebackCallbackType::Async(Box::new(WarnDevsFunction {})));
+}
+
+// macro to define and set the callback, with a function as a parameter
+// should match to "set_traceback!(sync function)"
+// and "set_traceback!(async function)"
+// IMPORTANT: $callback must be a function. Cannot be a closure.
+#[macro_export]
+macro_rules! set_traceback {
+    ($callback:ident) => {
+        paste::paste! {
+            // Generate a unique identifier for the struct
+            #[allow(non_camel_case_types)]
+            struct [<$callback _ TempStruct>];
+
+            impl $crate::TracebackCallback for [<$callback _ TempStruct>] {
+                fn call(&self, error: $crate::error_types::TracebackError) {
+                    $callback(error)
+                }
+            }
+
+            $crate::set_traceback_callback($crate::TracebackCallbackType::Sync(Box::new([<$callback _ TempStruct>])));
+        }
+    };
+    (async $callback:ident) => {
+        paste::paste! {
+            // Generate a unique identifier for the struct
+            #[allow(non_camel_case_types)]
+            struct [<$callback _ TempStruct>];
+
+            impl $crate::TracebackCallbackAsync for [<$callback _ TempStruct>] {
+                fn call(
+                    &self,
+                    error: $crate::error_types::TracebackError,
+                ) -> std::pin::Pin<
+                    Box<dyn std::future::Future<Output = ()> + std::marker::Send + std::marker::Sync>,
+                > {
+                    Box::pin($callback(error))
+                }
+            }
+
+            $crate::set_traceback_callback($crate::TracebackCallbackType::Async(Box::new([<$callback _ TempStruct>])));
+        }
+    };
 }
