@@ -7,7 +7,6 @@ use std::{
     fs::File,
     io::Write,
 };
-use tokio::{runtime::Handle, task};
 
 use crate::{sync_if_no_runtime, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
 
@@ -187,6 +186,25 @@ impl TracebackError {
         self.is_parent = is_parent;
         self
     }
+    pub fn clone(&mut self) -> Self {
+        let handled = self.is_handled;
+        self.is_handled = true;
+        Self {
+            message: self.message.clone(),
+            line: self.line.clone(),
+            file: self.file.clone(),
+            parent: self.parent.clone(),
+            time_created: self.time_created.clone(),
+            extra_data: self.extra_data.clone(),
+            subscribers: self.subscribers.clone(),
+            project: self.project.clone(),
+            computer: self.computer.clone(),
+            user: self.user.clone(),
+            is_parent: self.is_parent.clone(),
+            is_handled: handled,
+            is_default: self.is_default.clone(),
+        }
+    }
 }
 
 /// This display implementation is recursive, and will print the error and all its parents
@@ -317,6 +335,15 @@ pub fn warn_devs_sync(err: TracebackError) {
     rt.block_on(warn_devs(err));
 }
 
+pub trait AnyAndDisplay: std::any::Any + Display {}
+impl<T> AnyAndDisplay for T where T: std::any::Any + Display {}
+
+impl Into<Box<dyn std::any::Any>> for Box<dyn AnyAndDisplay> {
+    fn into(self) -> Box<dyn std::any::Any> {
+        Box::new(self)
+    }
+}
+
 #[macro_export]
 macro_rules! traceback {
     () => {
@@ -325,16 +352,42 @@ macro_rules! traceback {
     ($msg:expr) => {
         $crate::error_types::TracebackError::new($msg.to_string(), file!().to_string(), line!())
     };
-    (err $e:expr) => {
-        $crate::error_types::TracebackError::new(
-            $e.message.to_string(),
-            file!().to_string(),
-            line!(),
-        )
-        .with_parent($e)
-    };
-    ($e:expr, $msg:expr) => {
-        $crate::error_types::TracebackError::new($msg.to_string(), file!().to_string(), line!())
-            .with_parent($e)
-    };
+    (err $e:expr) => {{
+        use $crate::error_types::AnyAndDisplay;
+        use $crate::serde_json::json;
+        let boxed: Box<dyn AnyAndDisplay> = Box::new($e.clone());
+        let boxed: Box<dyn std::any::Any> = boxed.into();
+        if let Some(traceback_err) = boxed.downcast_ref::<TracebackError>() {
+            $crate::error_types::TracebackError::new(
+                traceback_err.message.to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_parent(traceback_err.clone())
+        } else {
+            $crate::error_types::TracebackError::new(String::from(""), file!().to_string(), line!())
+                .with_extra_data(json!({
+                    "error": $e.to_string()
+                }))
+        }
+    }};
+    ($e:expr, $msg:expr) => {{
+        use $crate::error_types::AnyAndDisplay;
+        use $crate::serde_json::json;
+        let boxed: Box<dyn AnyAndDisplay> = Box::new($e.clone());
+        let boxed: Box<dyn std::any::Any> = boxed.into();
+        if let Some(traceback_err) = boxed.downcast_ref::<TracebackError>() {
+            $crate::error_types::TracebackError::new(
+                $msg.to_string(),
+                file!().to_string(),
+                line!(),
+            )
+            .with_parent(traceback_err.clone())
+        } else {
+            $crate::error_types::TracebackError::new(String::from(""), file!().to_string(), line!())
+                .with_extra_data(json!({
+                    "error": $e.to_string()
+                }))
+        }
+    }};
 }

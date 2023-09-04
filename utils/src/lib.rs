@@ -5,6 +5,11 @@ pub mod geojson;
 pub mod http;
 pub mod json;
 
+pub use utils_derive;
+
+pub use paste;
+pub use serde_json;
+
 /*
 This function is simply the input() function from Python, as getting input is a bit annoying in Rust.
 */
@@ -90,15 +95,11 @@ pub fn set_default_traceback_callback() {
 #[macro_export]
 macro_rules! set_traceback {
     ($callback:ident) => {
-        paste::paste! {
-            // Retrieve line and file information
-            let _LINE: u32 = line!();
-            let _FILE: &'static str = file!();
-
+        $crate::paste::unique_paste! {
             // Generate a unique identifier for the struct
             #[allow(non_camel_case_types)]
             mod [<_private_ $callback _ TempStruct>] {
-                struct [<$callback _ TempStruct>];
+                pub struct [<$callback _ TempStruct>];
 
                 impl $crate::TracebackCallback for [<$callback _ TempStruct>] {
                     fn call(&self, error: $crate::error_types::TracebackError) {
@@ -117,14 +118,11 @@ macro_rules! set_traceback {
         }
     };
     (async $callback:ident) => {
-        paste::paste! {
-            // Retrieve line and file information
-            let _LINE: u32 = line!();
-            let _FILE: &'static str = file!();
+        $crate::paste::unique_paste! {
             // Generate a unique identifier for the struct
             #[allow(non_camel_case_types)]
             mod [<_private_ $callback _ TempStruct>] {
-                struct [<$callback _ TempStruct>];
+                pub struct [<$callback _ TempStruct>];
 
                 impl $crate::TracebackCallbackAsync for [<$callback _ TempStruct>] {
                     fn call(
