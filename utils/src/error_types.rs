@@ -40,7 +40,7 @@ impl Default for TracebackError {
             file: file!().to_string(),
             line: line!(),
             parent: None,
-            time_created: DateTime::from_naive_utc_and_offset(
+            time_created: DateTime::from_utc(
                 chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
                 Utc,
             ),
