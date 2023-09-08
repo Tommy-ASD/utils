@@ -8,7 +8,7 @@ use std::{
     io::Write,
 };
 
-use crate::{sync_if_no_runtime, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
+use crate::{async_utils::block_on, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
 
 // This struct is getting messier by the minute
 // To whoever's job it becomes refactoring this:
@@ -90,13 +90,13 @@ impl Drop for TracebackError {
             let callback: Option<&mut TracebackCallbackType> = TRACEBACK_ERROR_CALLBACK.as_mut();
             match callback {
                 Some(TracebackCallbackType::Async(ref mut f)) => {
-                    sync_if_no_runtime!(f.call(this));
+                    block_on(f.call(this));
                 }
                 Some(TracebackCallbackType::Sync(ref mut f)) => {
                     f.call(this);
                 }
                 None => {
-                    sync_if_no_runtime!(warn_devs(this));
+                    block_on(warn_devs(this));
                 }
             }
         }

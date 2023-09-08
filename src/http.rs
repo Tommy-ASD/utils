@@ -61,21 +61,21 @@ where
     let request = match request {
         Ok(r) => r,
         Err(e) => {
-            return Err(traceback!("Error building request").with_extra_data(json!({
-                "url": url,
-                "error": format!("{}", e),
-                "headers": headers,
-                "body": body
-            })));
+            return Err(
+                traceback!(e, "Error building request").with_extra_data(json!({
+                    "url": url,
+                    "headers": headers,
+                    "body": body
+                })),
+            );
         }
     };
     let response = match client.execute(request).await {
         Ok(r) => r,
         Err(e) => {
             return Err(
-                traceback!("Error executing request").with_extra_data(json!({
+                traceback!(e, "Error executing request").with_extra_data(json!({
                     "url": url,
-                    "error": format!("{}", e),
                     "headers": headers,
                     "body": body
                 })),
@@ -85,24 +85,26 @@ where
     let response = match response.text().await {
         Ok(r) => r,
         Err(e) => {
-            return Err(traceback!("Error reading response").with_extra_data(json!({
-                "url": url,
-                "error": format!("{}", e),
-                "headers": headers,
-                "body": body
-            })));
+            return Err(
+                traceback!(e, "Error reading response").with_extra_data(json!({
+                    "url": url,
+                    "headers": headers,
+                    "body": body
+                })),
+            );
         }
     };
     let response: T = match serde_json::from_str(&response) {
         Ok(r) => r,
         Err(e) => {
-            return Err(traceback!("Error parsing response").with_extra_data(json!({
-                "url": url,
-                "error": format!("{}", e),
-                "headers": headers,
-                "body": body,
-                "response": response
-            })));
+            return Err(
+                traceback!(e, "Error parsing response").with_extra_data(json!({
+                    "url": url,
+                    "headers": headers,
+                    "body": body,
+                    "response": response
+                })),
+            );
         }
     };
 
