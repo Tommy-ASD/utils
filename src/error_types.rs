@@ -327,14 +327,6 @@ pub async fn warn_devs(err: TracebackError) {
     };
 }
 
-// wrapper function for syncronous use
-// calls warn_devs and waits for it to finish
-// it is blocking, so it should not be used in async code
-pub fn warn_devs_sync(err: TracebackError) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(warn_devs(err));
-}
-
 pub trait AnyAndDisplay: std::any::Any + Display {}
 impl<T> AnyAndDisplay for T where T: std::any::Any + Display {}
 
