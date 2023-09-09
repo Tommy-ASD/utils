@@ -99,10 +99,48 @@ pub fn set_default_traceback_callback() {
     set_traceback_callback(TracebackCallbackType::Async(Box::new(WarnDevsFunction {})));
 }
 
-// macro to define and set the callback, with a function as a parameter
-// should match to "set_traceback!(sync function)"
-// and "set_traceback!(async function)"
-// IMPORTANT: $callback must be a function. Cannot be a closure.
+/// Sets a custom traceback callback for error handling in a Rust program.
+///
+/// This macro allows you to define and set a custom traceback callback function,
+/// which will be called when a TracebackError goes out of scope.
+/// The traceback callback provides a way to customize how error information is
+/// handled and reported.
+///
+/// # Usage
+///
+/// To use this macro, provide the name of the callback function you want to use
+/// as the custom traceback callback. This function should take an argument of
+/// type `utils::error_types::TracebackError`. The macro generates a unique
+/// struct and function to wrap your callback and sets it as the traceback
+/// callback using `utils::set_traceback_callback`.
+///
+/// # Example
+///
+/// ```rust
+/// // Define a custom traceback callback function
+/// fn my_traceback_callback(error: utils::error_types::TracebackError) {
+///     // Custom error handling logic here
+///     println!("Custom traceback callback called: {:?}", error);
+/// }
+///
+/// // Use the set_traceback macro to set the custom traceback callback
+/// set_traceback!(my_traceback_callback);
+///
+/// // Any TracebackErrors will now be handled by my_traceback_callback when dropped
+/// ```
+///
+/// ```rust
+/// // The same is possible with asynchronous functions
+/// async fn my_traceback_callback(error: utils::error_types::TracebackError) {
+///     // Custom error handling logic here
+///     println!("Async custom traceback callback called: {:?}", error);
+/// }
+///
+/// // But you have to specify that it is asynchronous
+/// set_traceback!(async my_traceback_callback);
+///
+/// // Any TracebackErrors will now be handled by my_traceback_callback when dropped
+/// ```
 #[macro_export]
 macro_rules! set_traceback {
     ($callback:ident) => {
@@ -155,5 +193,45 @@ macro_rules! set_traceback {
             // Call the macro to set the traceback callback
             $crate::set_traceback_callback($crate::TracebackCallbackType::Async(Box::new([<$callback _ temp_struct>]())));
         }
+    };
+}
+
+/// Sets a custom panic handler for handling panics in Rust programs.
+///
+/// This macro allows you to easily set a custom panic handler function using the
+/// `std::panic::set_hook` function. A panic handler is a function that is called
+/// when a panic occurs in your program, allowing you to customize how panics are
+/// handled.
+///
+/// # Usage
+///
+/// To use this macro, provide the name of the function you want to use as the
+/// custom panic handler. This function should have the following signature:
+///
+/// ```rust
+/// fn my_panic_handler(info: &std::panic::PanicInfo);
+/// ```
+///
+/// # Example
+///
+/// ```rust
+/// // Define a custom panic handler function
+/// fn my_panic_handler(info: &std::panic::PanicInfo) {
+///     println!("Custom panic handler called: {:?}", info);
+///     // You can add your custom panic handling logic here
+/// }
+///
+/// // Use the set_panic_handler macro to set the custom panic handler
+/// set_panic_handler!(my_panic_handler);
+///
+/// // Any panics that occur in the program will now be handled by my_panic_handler.
+/// ```
+///
+/// For more information on panic handling in Rust, see the Rust documentation on
+/// panic handling: https://doc.rust-lang.org/std/panic/index.html
+#[macro_export]
+macro_rules! set_panic_handler {
+    ($handler:ident) => {
+        std::panic::set_hook(Box::new($handler))
     };
 }

@@ -2,6 +2,8 @@
 name = "utils"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Tommy-ASD/utils"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,7 +14,6 @@ csv = "1.2.2"
 calamine = "0.21.2"
 chrono = { version = "0.4.26", features = ["serde"] }
 email_address = "0.2.4"
-tokio = { version = "1.29.1", features = ["full"] }
 reqwest = "0.11.18"
 paste = { git = "https://github.com/Tommy-ASD/paste.git" }
 # no-panic = "0.1.26"

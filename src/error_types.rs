@@ -8,7 +8,7 @@ use std::{
     io::Write,
 };
 
-use crate::{sync_if_no_runtime, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
+use crate::{async_utils::block_on, TracebackCallbackType, TRACEBACK_ERROR_CALLBACK};
 
 // This struct is getting messier by the minute
 // To whoever's job it becomes refactoring this:
@@ -90,13 +90,13 @@ impl Drop for TracebackError {
             let callback: Option<&mut TracebackCallbackType> = TRACEBACK_ERROR_CALLBACK.as_mut();
             match callback {
                 Some(TracebackCallbackType::Async(ref mut f)) => {
-                    sync_if_no_runtime!(f.call(this));
+                    block_on(f.call(this));
                 }
                 Some(TracebackCallbackType::Sync(ref mut f)) => {
                     f.call(this);
                 }
                 None => {
-                    sync_if_no_runtime!(warn_devs(this));
+                    block_on(warn_devs(this));
                 }
             }
         }
@@ -325,14 +325,6 @@ pub async fn warn_devs(err: TracebackError) {
             return;
         }
     };
-}
-
-// wrapper function for syncronous use
-// calls warn_devs and waits for it to finish
-// it is blocking, so it should not be used in async code
-pub fn warn_devs_sync(err: TracebackError) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(warn_devs(err));
 }
 
 pub trait AnyAndDisplay: std::any::Any + Display {}
