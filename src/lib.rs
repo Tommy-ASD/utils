@@ -10,6 +10,11 @@ pub use utils_derive;
 pub use paste;
 pub use serde_json;
 
+use std::future::Future;
+use std::pin::Pin;
+
+use crate::error_types::{warn_devs, TracebackError};
+
 /*
 This function is simply the input() function from Python, as getting input is a bit annoying in Rust.
 */
@@ -19,10 +24,21 @@ pub fn input() -> String {
         Ok(_) => {}
         Err(e) => {
             println!("Error reading line: {}", e);
+            println!("Please try again");
             return input();
         }
     }
     line.trim().to_string()
+}
+
+#[macro_export]
+macro_rules! input {
+    ($($arg:expr),*) => {{
+        $(print!("{} ", $arg);)* // Print each argument followed by a space
+        println!(); // Print a newline at the end
+
+        input()
+    }};
 }
 
 /// Gets the type of a value as a string,
@@ -48,11 +64,6 @@ pub fn type_of<T>(_: T) -> &'static str {
 pub fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>());
 }
-
-use std::future::Future;
-use std::pin::Pin;
-
-use crate::error_types::{warn_devs, TracebackError};
 
 pub trait TracebackCallback {
     fn call(&self, error: TracebackError);
