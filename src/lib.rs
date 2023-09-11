@@ -18,10 +18,21 @@ pub fn input() -> String {
         Ok(_) => {}
         Err(e) => {
             println!("Error reading line: {}", e);
+            println!("Please try again");
             return input();
         }
     }
     line.trim().to_string()
+}
+
+#[macro_export]
+macro_rules! input {
+    ($($arg:expr),*) => {{
+        $(print!("{} ", $arg);)* // Print each argument followed by a space
+        println!(); // Print a newline at the end
+
+        input()
+    }};
 }
 
 /// Gets the type of a value as a string,
