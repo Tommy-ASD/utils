@@ -4,8 +4,6 @@ pub mod geojson;
 pub mod http;
 pub mod json;
 
-pub use utils_derive;
-
 pub use paste;
 pub use serde_json;
 
