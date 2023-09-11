@@ -1,30 +1,22 @@
 use proc_macro::TokenStream;
-use proc_macro_hack::proc_macro_hack;
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::ExprIndex;
 use syn::{parse_macro_input, visit_mut::VisitMut, Expr};
 
-#[proc_macro_hack]
-pub fn auto_traceback(input: TokenStream) -> TokenStream {
-    // Use the input TokenStream to apply #[utils_derive::traceback] to functions.
-    // You can implement your logic here to traverse and modify the syntax tree.
-    TokenStream::from(input)
-}
-
 #[proc_macro_attribute]
 pub fn traceback(_attrs: TokenStream, input: TokenStream) -> TokenStream {
     let mut function = parse_macro_input!(input as syn::ItemFn);
 
-    let mut visitor = TryExprVisitor;
+    let mut visitor = TracingVisitor;
     visitor.visit_item_fn_mut(&mut function);
 
     TokenStream::from(quote! { #function })
 }
 
-struct TryExprVisitor;
+struct TracingVisitor;
 
-impl VisitMut for TryExprVisitor {
+impl VisitMut for TracingVisitor {
     fn visit_expr_mut(&mut self, expr: &mut Expr) {
         match expr {
             Expr::Try(expr_try) => {
@@ -41,28 +33,6 @@ impl VisitMut for TryExprVisitor {
 
                 *expr = new_expr;
             }
-            _ => {
-                syn::visit_mut::visit_expr_mut(self, expr);
-            }
-        }
-    }
-}
-
-#[proc_macro_attribute]
-pub fn safe_indexing(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    let mut function = parse_macro_input!(input as syn::ItemFn);
-
-    let mut visitor = SafeIndexingVisitor;
-    visitor.visit_item_fn_mut(&mut function);
-
-    TokenStream::from(quote! { #function })
-}
-
-struct SafeIndexingVisitor;
-
-impl VisitMut for SafeIndexingVisitor {
-    fn visit_expr_mut(&mut self, expr: &mut Expr) {
-        match expr {
             Expr::Index(index) => {
                 // Extract the parts of the index expression
                 let ExprIndex {
@@ -77,7 +47,7 @@ impl VisitMut for SafeIndexingVisitor {
                     match #inner_expr.get(#index) {
                         Some(value) => value,
                         None => {
-                            return Err(traceback!(format!("Error while indexing into {:?} in variable {}", #inner_expr, #index)));
+                            return Err(traceback!(format!("Error while indexing into {} in variable {:?}", #index, #inner_expr)));
                         },
                     }
                 );
@@ -85,7 +55,9 @@ impl VisitMut for SafeIndexingVisitor {
                 // Replace the current expression with the safe indexing expression
                 *expr = syn::parse2(safe_indexing_expr).unwrap();
             }
-            _ => {}
+            _ => {
+                syn::visit_mut::visit_expr_mut(self, expr);
+            }
         }
     }
 }

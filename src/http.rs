@@ -5,7 +5,7 @@ use std::{
 
 use serde_json::json;
 
-use crate::{error_types::TracebackError, traceback};
+use traceback_error::{traceback, TracebackError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(C)]

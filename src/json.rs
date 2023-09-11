@@ -5,7 +5,7 @@ use std::{
 
 use serde_json::{Map, Value};
 
-use crate::{error_types::TracebackError, traceback};
+use traceback_error::{traceback, TracebackError};
 
 /*
 This function is used to split the roller.json file into multiple files.

@@ -1,7 +1,7 @@
 use csv::Reader;
 use serde_json::{json, Value};
 
-use crate::{error_types::TracebackError, traceback};
+use traceback_error::{traceback, TracebackError};
 
 /// This function takes in a csv::Reader<&[u8]> and returns a serde_json::Value
 /// It assumes that the first row of the csv is the header row, and that all

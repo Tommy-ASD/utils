@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use crate::{error_types::TracebackError, traceback};
+use traceback_error::{traceback, TracebackError};
 /*
 This function takes in a set of coordinates in the following format:
 [
