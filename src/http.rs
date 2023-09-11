@@ -3,11 +3,12 @@ use std::{
     fmt::{Display, Formatter},
 };
 
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use traceback_error::{traceback, TracebackError};
 use url::Url;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(C)]
 pub enum Method {
     GET,
@@ -115,7 +116,8 @@ where
                 traceback!(e, "Error building request").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
-                    "body": body
+                    "body": body,
+                    "method": method,
                 })),
             );
         }
@@ -127,7 +129,8 @@ where
                 traceback!(e, "Error executing request").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
-                    "body": body
+                    "body": body,
+                    "method": method,
                 })),
             );
         }
@@ -139,7 +142,8 @@ where
                 traceback!(e, "Error reading response").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
-                    "body": body
+                    "body": body,
+                    "method": method,
                 })),
             );
         }
@@ -152,7 +156,8 @@ where
                     "url": url,
                     "headers": headers,
                     "body": body,
-                    "response": response
+                    "response": response,
+                    "method": method,
                 })),
             );
         }
