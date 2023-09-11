@@ -19,3 +19,4 @@ paste = { version = "0.1.0", package = "unique-paste" }
 
 traceback-error = "0.1.7"
 traceback-derive = "0.1.1"
+url = { version = "2.4.1", features = ["serde"] }

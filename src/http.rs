@@ -4,8 +4,8 @@ use std::{
 };
 
 use serde_json::json;
-
 use traceback_error::{traceback, TracebackError};
+use url::Url;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(C)]
@@ -82,7 +82,7 @@ impl Display for Method {
 /// In this example, the function `attempt_fetch_and_parse` is used to fetch JSON data from a URL, and the response is deserialized into a `Post` struct.
 /// The result is then printed.
 pub async fn attempt_fetch_and_parse<T>(
-    url: &str,
+    url: &Url,
     headers: &Option<HashMap<&str, &str>>,
     body: Option<&str>,
     method: Method,
@@ -92,12 +92,12 @@ where
 {
     let client = reqwest::Client::new();
     let mut request_builder = match method {
-        Method::GET => client.get(url),
-        Method::POST => client.post(url),
-        Method::PUT => client.put(url),
-        Method::DELETE => client.delete(url),
-        Method::HEAD => client.head(url),
-        Method::PATCH => client.patch(url),
+        Method::GET => client.get(url.clone()),
+        Method::POST => client.post(url.clone()),
+        Method::PUT => client.put(url.clone()),
+        Method::DELETE => client.delete(url.clone()),
+        Method::HEAD => client.head(url.clone()),
+        Method::PATCH => client.patch(url.clone()),
     };
     if let Some(h) = headers {
         for (k, v) in h {
