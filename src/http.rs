@@ -31,6 +31,56 @@ impl Display for Method {
     }
 }
 
+/// Attempts to fetch data from a given URL using an HTTP request, and then parses the response into a specified type.
+///
+/// # Arguments
+///
+/// * `url` - A string representing the URL to fetch data from.
+/// * `headers` - An optional `HashMap` containing HTTP headers as key-value pairs.
+/// * `body` - An optional string containing the request body data.
+/// * `method` - An HTTP request method from the `Method` enum (e.g., `Method::GET`, `Method::POST`).
+///
+/// # Returns
+///
+/// * `Result<T, TracebackError>` - A `Result` containing the parsed response data of type `T` if the operation is successful,
+///   or an error message as a `TracebackError` if there's an issue during the process.
+///
+/// # Type Parameters
+///
+/// * `T` - The type into which the response data should be deserialized. It must implement `serde::de::DeserializeOwned`.
+///
+/// # Example
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use serde::Deserialize;
+/// use traceback_error::TracebackError;
+/// use your_module_name::{attempt_fetch_and_parse, Method};
+///
+/// #[derive(Debug, Deserialize)]
+/// struct Post {
+///     userId: u32,
+///     id: u32,
+///     title: String,
+///     body: String,
+/// }
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), TracebackError> {
+///     let url = "https://jsonplaceholder.typicode.com/posts/1";
+///     let mut headers = HashMap::new();
+///     headers.insert("Content-Type", "application/json");
+///
+///     let post: Post = attempt_fetch_and_parse(url, &Some(headers), None, Method::GET).await?;
+///
+///     println!("{:?}", post);
+///
+///     Ok(())
+/// }
+/// ```
+///
+/// In this example, the function `attempt_fetch_and_parse` is used to fetch JSON data from a URL, and the response is deserialized into a `Post` struct.
+/// The result is then printed.
 pub async fn attempt_fetch_and_parse<T>(
     url: &str,
     headers: &Option<HashMap<&str, &str>>,

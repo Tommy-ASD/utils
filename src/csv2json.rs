@@ -3,13 +3,56 @@ use serde_json::{json, Value};
 
 use traceback_error::{traceback, TracebackError};
 
-/// This function takes in a csv::Reader<&[u8]> and returns a serde_json::Value
-/// It assumes that the first row of the csv is the header row, and that all
-/// other rows are data rows.
-/// It also assumes that all data is in the form of strings.
-/// Should these assumptions not be true, this function will return an error.
-/// NOTE: Some data will be lost in the conversion from csv to json.
-/// This happens because serde_json automatically sorts the CSV headers alphabetically.
+/// Converts a CSV data represented by a `csv::Reader<&[u8]>` into a `serde_json::Value`.
+///
+/// ## Arguments
+///
+/// * `csv` - A `csv::Reader<&[u8]>` containing the CSV data to be converted.
+///
+/// ## Returns
+///
+/// * `Result<serde_json::Value, TracebackError>` - A `Result` containing the resulting JSON data as `serde_json::Value`
+///   if the conversion is successful, or an error message as a `TracebackError` if there's an issue during the conversion process.
+///
+/// ## Assumptions
+///
+/// - The first row of the CSV is considered the header row.
+/// - All other rows are treated as data rows.
+/// - All data in the CSV is assumed to be in string format.
+///
+/// ## Notes
+///
+/// - Some data may be lost during the conversion because serde_json automatically sorts CSV headers alphabetically.
+///
+/// ## Example
+///
+/// ```rust
+/// use csv::Reader;
+/// use serde_json::Value;
+/// use traceback_error::TracebackError;
+/// use utils::csv2json::csv_to_json;
+///
+/// fn main() {
+///     // Create a CSV reader from a byte slice (replace with your actual CSV data)
+///     let csv_data: &[u8] = b"Name,Age,Location\nAlice,25,New York\nBob,30,Los Angeles";
+///     let reader = Reader::from_reader(csv_data);
+///
+///     // Convert the CSV data to JSON
+///     let result = csv_to_json(reader);
+///
+///     match result {
+///         Ok(json_data) => {
+///             println!("{}", json_data);
+///         }
+///         Err(err) => {
+///             eprintln!("Error: {:?}", err);
+///         }
+///     }
+/// }
+/// ```
+///
+/// In this example, `csv_data` is a byte slice representing CSV data. The function `csv_to_json` is used to convert the CSV data into JSON format.
+/// The resulting JSON data can be used as needed.
 pub fn csv_to_json<T: std::io::Read>(
     mut csv: Reader<T>,
 ) -> Result<serde_json::Value, TracebackError> {
@@ -48,6 +91,47 @@ pub fn csv_to_json<T: std::io::Read>(
     Ok(serde_json::Value::Array(records))
 }
 
+/// Converts a `serde_json::Value` into a CSV-formatted string.
+///
+/// ## Arguments
+///
+/// * `json` - A `serde_json::Value` containing the JSON data to be converted to CSV.
+///
+/// ## Returns
+///
+/// * `Result<String, TracebackError>` - A `Result` containing the CSV-formatted string if the conversion is successful,
+///   or an error message as a `TracebackError` if there's an issue during the conversion process.
+///
+/// ## Example
+///
+/// ```rust
+/// use serde_json::{Value, json};
+/// use traceback_error::TracebackError;
+/// use utils::csv2json::json_to_csv;
+///
+/// fn main() {
+///     // Create a JSON object (replace with your actual JSON data)
+///     let json_data = json!([
+///         {"Name": "Alice", "Age": 25, "Location": "New York"},
+///         {"Name": "Bob", "Age": 30, "Location": "Los Angeles"}
+///     ]);
+///
+///     // Convert the JSON data to CSV
+///     let result = json_to_csv(json_data);
+///
+///     match result {
+///         Ok(csv_string) => {
+///             println!("{}", csv_string);
+///         }
+///         Err(err) => {
+///             eprintln!("Error: {:?}", err);
+///         }
+///     }
+/// }
+/// ```
+///
+/// In this example, `json_data` is a JSON object containing an array of records. The function `json_to_csv` is used to convert the JSON data into a CSV-formatted string.
+/// The resulting CSV string can be used as needed.
 pub fn json_to_csv<'a>(json: Value) -> Result<String, TracebackError> {
     let mut wtr = csv::Writer::from_writer(vec![]);
     let zeroth = match json.get(0) {

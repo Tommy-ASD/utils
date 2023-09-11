@@ -7,36 +7,75 @@ use serde_json::{Map, Value};
 
 use traceback_error::{traceback, TracebackError};
 
-/*
-This function is used to split the roller.json file into multiple files.
-The reason for this is that the file is too large to be uploaded to Surreal.
-It should work with any JSON array, but it's only been tested with roller.json.
-
-Parameters:
-    filepath: &str - the path to the JSON file
-    split_size: usize - the size of the split files
-
-Returns:
-    Ok(()) if successful,
-    Err($crate::error_types::TracebackError) on failure
-
-Possible problems:
-    - if the file can not be read, the function will return an error
-    - if the file is malformed, the function will return an error
-    - if the JSON file is not an array, the function will return an error
-    - if writing to the files fails, it will not work
-    - if the file is too large and the host machine doesn't have enough memory,
-      i am not sure what will happen (probably a panic)
-    - if the file is too large and the host machine doesn't have enough disk space,
-      i am also not sure what will happen (probably a panic, again)
-
-Possible improvements:
-    - reduce code repetition
-    - general code cleanup
-
-Calls:
-    - none
-*/
+/// Splits a JSON array from a file into multiple smaller files.
+///
+/// The purpose of this function is to split a large JSON array stored in a file
+/// into smaller files to make it manageable for upload or processing.
+///
+/// # Arguments
+///
+/// * `filepath` - A string representing the path to the input JSON file.
+/// * `split_size` - The size of each split file.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the splitting process is successful, or `Err(TracebackError)` on failure.
+///
+/// # Possible Problems
+///
+/// This function can encounter the following issues:
+///
+/// - If the file cannot be read, the function will return an error.
+/// - If the file is malformed JSON, the function will return an error.
+/// - If the JSON file is not an array, the function will return an error.
+/// - If writing to the split files fails, it will result in an error.
+/// - If the file is too large and the host machine doesn't have enough memory,
+///   it may lead to a panic.
+/// - If the file is too large and the host machine doesn't have enough disk space,
+///   it may also lead to a panic.
+///
+/// # Possible Improvements
+///
+/// Some possible improvements for this function include:
+///
+/// - Reducing code repetition to improve maintainability.
+/// - General code cleanup and optimization.
+///
+/// # Example
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use serde::Deserialize;
+/// use traceback_error::TracebackError;
+/// use your_module_name::split_array_from_json_file;
+///
+/// #[derive(Debug, Deserialize)]
+/// struct Item {
+///     // Define your struct fields here.
+/// }
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), TracebackError> {
+///     let file_path = "path/to/your/json_file.json";
+///     let split_size = 100; // Specify the desired split size.
+///
+///     let result = split_array_from_json_file(file_path, split_size);
+///
+///     match result {
+///         Ok(_) => {
+///             println!("JSON array successfully split.");
+///         }
+///         Err(err) => {
+///             eprintln!("Error: {:?}", err);
+///         }
+///     }
+///
+///     Ok(())
+/// }
+/// ```
+///
+/// In this example, the `split_array_from_json_file` function is used to split a JSON array from a file into smaller files.
+/// Make sure to specify the correct file path and desired split size for your use case.
 pub fn split_array_from_json_file(filepath: &str, split_size: usize) -> Result<(), TracebackError> {
     let str = match read_to_string(filepath) {
         Ok(s) => s,

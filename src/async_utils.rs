@@ -172,6 +172,40 @@ where
     WakerRef::new_unowned(waker)
 }
 
+/// Synchronously Executes an Asynchronous Task
+///
+/// This function takes an asynchronous task represented by a Future and runs it synchronously,
+/// blocking the current thread until the task is completed. It uses a custom executor to poll
+/// the Future until it's ready.
+///
+/// # Parameters
+///
+/// - `f`: A Future that represents the asynchronous task to be executed synchronously.
+///
+/// # Returns
+///
+/// The function returns the output of the provided Future once it has completed its execution.
+///
+/// # Examples
+///
+/// ```
+/// let result = utils::async_utils::block_on(async {
+///     // Your asynchronous code here
+///     42
+/// });
+///
+/// assert_eq!(result, 42);
+/// ```
+///
+/// # Safety
+///
+/// It's important to note that blocking the thread with this function can lead to performance
+/// issues and should be used with caution, especially in applications with many concurrent tasks.
+/// Consider using it only when it's necessary to run asynchronous code in a synchronous context.
+///
+/// # Panics
+///
+/// This function may panic if the provided Future panics during execution.
 pub fn block_on<F: Future>(f: F) -> F::Output {
     pin_mut!(f);
     run_executor(|cx| f.as_mut().poll(cx))
