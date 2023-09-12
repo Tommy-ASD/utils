@@ -80,13 +80,13 @@ pub fn split_array_from_json_file(filepath: &str, split_size: usize) -> Result<(
     let str = match read_to_string(filepath) {
         Ok(s) => s,
         Err(e) => {
-            return Err(traceback!(e, "Error when reading roller JSON"));
+            return Err(traceback!(err e, "Error when reading roller JSON"));
         }
     };
     let parsed: serde_json::Value = match serde_json::from_str(&str) {
         Ok(p) => p,
         Err(e) => {
-            return Err(traceback!(e, "Error when parsing roller JSON"));
+            return Err(traceback!(err e, "Error when parsing roller JSON"));
         }
     };
     let parsed = match parsed.as_array() {
@@ -107,7 +107,7 @@ pub fn split_array_from_json_file(filepath: &str, split_size: usize) -> Result<(
     match create_dir_all(format!(".{folder_path}")) {
         Ok(_) => {}
         Err(e) => {
-            return Err(traceback!(e, "Error when creating directory"));
+            return Err(traceback!(err e, "Error when creating directory"));
         }
     };
     let mut i = 0;
@@ -116,19 +116,19 @@ pub fn split_array_from_json_file(filepath: &str, split_size: usize) -> Result<(
         let mut file = match File::create(format!(".{folder_path}/{i}.{extension}")) {
             Ok(f) => f,
             Err(e) => {
-                return Err(traceback!(e, "Error when creating file"));
+                return Err(traceback!(err e, "Error when creating file"));
             }
         };
         let chunk = match serde_json::to_string(chunk) {
             Ok(c) => c,
             Err(e) => {
-                return Err(traceback!(e, "Error when parsing chunk"));
+                return Err(traceback!(err e, "Error when parsing chunk"));
             }
         };
         match file.write_all(chunk.as_bytes()) {
             Ok(_) => {}
             Err(e) => {
-                return Err(traceback!(e, "Error when writing to file"));
+                return Err(traceback!(err e, "Error when writing to file"));
             }
         };
         i += 1;

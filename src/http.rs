@@ -113,7 +113,7 @@ where
         Ok(r) => r,
         Err(e) => {
             return Err(
-                traceback!(e, "Error building request").with_extra_data(json!({
+                traceback!(err e, "Error building request").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
                     "body": body,
@@ -126,7 +126,7 @@ where
         Ok(r) => r,
         Err(e) => {
             return Err(
-                traceback!(e, "Error executing request").with_extra_data(json!({
+                traceback!(err e, "Error executing request").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
                     "body": body,
@@ -139,7 +139,7 @@ where
         Ok(r) => r,
         Err(e) => {
             return Err(
-                traceback!(e, "Error reading response").with_extra_data(json!({
+                traceback!(err e, "Error reading response").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
                     "body": body,
@@ -152,7 +152,7 @@ where
         Ok(r) => r,
         Err(e) => {
             return Err(
-                traceback!(e, "Error parsing response").with_extra_data(json!({
+                traceback!(err e, "Error parsing response").with_extra_data(json!({
                     "url": url,
                     "headers": headers,
                     "body": body,
