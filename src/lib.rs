@@ -115,3 +115,14 @@ macro_rules! set_panic_handler {
         std::panic::set_hook(Box::new($handler))
     };
 }
+
+
+pub fn get_multi_mut<T>(v: &mut [T], i: usize, j: usize) -> Option<(&mut T, &mut T)> {
+    if i == j {
+        return None;
+    }
+    let (start, end) = if i < j { (i, j) } else { (j, i) };
+
+    let (first, second) = v.split_at_mut(start + 1);
+    Some((&mut first[start], &mut second[end - start - 1]))
+}

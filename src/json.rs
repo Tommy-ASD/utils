@@ -331,3 +331,121 @@ mod tests {
         assert_eq!(generate_schema(&input), expected_schema);
     }
 }
+
+/// Recursively compares two Serde JSON objects and identifies any differences.
+///
+/// This function takes two JSON objects represented as `serde_json::Value` and recursively compares
+/// their structure and values. It returns an optional `serde_json::Map<String, Value>` containing the
+/// differences found between the two objects. If no differences are found, it returns `None`.
+///
+/// # Arguments
+///
+/// * `a` - The first JSON object for comparison.
+/// * `b` - The second JSON object for comparison.
+///
+/// # Returns
+///
+/// An optional `serde_json::Map<String, Value>` containing the differences found between `a` and `b`,
+/// or `None` if no differences are found.
+///
+/// # Example
+///
+/// ```rust
+/// use serde_json::{Value, Map};
+/// use utils::json::compare_json_objects;
+///
+/// let json1: Value = serde_json::from_str(r#"
+///     {
+///         "name": "John",
+///         "age": 25,
+///         "address": {
+///             "city": "Kandy",
+///             "country": "Sri Lanka"
+///         },
+///         "species": "human"
+///     }
+/// "#).unwrap();
+///
+/// let json2: Value = serde_json::from_str(r#"
+///     {
+///         "name": "Jane",
+///         "age": 30,
+///         "address": {
+///             "city": "Berlin",
+///             "country": "Germany"
+///         },
+///         "species": "human"
+///     }
+/// "#).unwrap();
+///
+/// let expected_difference = serde_json::from_str(r#"
+///     {
+///         "name": {
+///             "left": "John",
+///             "right": "Jane"
+///         },
+///         "age": {
+///             "left": 25,
+///             "right": 30
+///         },
+///         "address": {
+///             "city": {
+///                 "left": "Kandy",
+///                 "right": "Berlin"
+///             },
+///             "country": {
+///                 "left": "Sri Lanka",
+///                 "right": "Germany"
+///             }
+///         }
+///     }
+/// "#).unwrap();
+///
+/// assert_eq!(compare_json_objects(&json1, &json2), expected_difference)
+/// ```
+///
+/// In the example above, two JSON objects are compared, and any differences between them are printed.
+///
+/// # Note
+///
+/// This function is intended for comparing small to moderately sized JSON objects. Performance may
+/// degrade for very large or deeply nested JSON structures.
+pub fn compare_json_objects(a: &Value, b: &Value) -> Option<Map<String, Value>> {
+    match (a, b) {
+        (Value::Object(obj1), Value::Object(obj2)) => {
+            let mut diff = Map::new();
+
+            for (key, value1) in obj1.iter() {
+                if let Some(value2) = obj2.get(key) {
+                    if let Some(sub_diff) = compare_json_objects(value1, value2) {
+                        diff.insert(key.clone(), Value::Object(sub_diff));
+                    }
+                } else {
+                    diff.insert(key.clone(), value1.clone());
+                }
+            }
+
+            for (key, value2) in obj2.iter() {
+                if !obj1.contains_key(key) {
+                    diff.insert(key.clone(), value2.clone());
+                }
+            }
+
+            if diff.is_empty() {
+                None
+            } else {
+                Some(diff)
+            }
+        }
+        _ => {
+            if a != b {
+                let mut diff = Map::new();
+                diff.insert("left".to_string(), a.clone());
+                diff.insert("right".to_string(), b.clone());
+                Some(diff)
+            } else {
+                None
+            }
+        }
+    }
+}
