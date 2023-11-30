@@ -17,6 +17,6 @@ email_address = "0.2.4"
 reqwest = "0.11.18"
 paste = { version = "0.1.0", package = "unique-paste" }
 
-traceback-error = 0.1.9
+traceback-error = "0.1.9"
 traceback-derive = "0.1.1"
 url = { version = "2.4.1", features = ["serde"] }
