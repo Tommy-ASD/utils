@@ -60,26 +60,29 @@ fn map_to_vec(c: &Value) -> Result<Vec<Vec<f64>>, TracebackError> {
 /// This function is used internally by `map_to_vec`.
 ///
 /// # Arguments
-/// * `c` - A reference to a JSON `Value` object to be converted.
+/// * `value` - A reference to a JSON `Value` object to be converted.
 ///
 /// # Returns
 /// * `Result<Vec<f64>, TracebackError>` - A `Result` containing the vector of floating-point numbers if the conversion is successful,
 /// or an error message as a `TracebackError` if the input is not an array or if the values cannot be parsed as floating-point numbers.
-fn map_to_vec_inner(c: &Value) -> Result<Vec<f64>, TracebackError> {
-    c.as_array()
+fn map_to_vec_inner(value: &Value) -> Result<Vec<f64>, TracebackError> {
+    value.as_array()
         .ok_or_else(|| {
-            traceback!("Expected an array as a parameter").with_extra_data(json!({ "c": c }))
+            traceback!("Expected an array as a parameter").with_extra_data(json!({ "value": value }))
         })
-        .map(|a| {
-            a.iter()
+        .map(|value_element| {
+            value_element.iter()
                 // enumerate really isn't necessary here
                 // but debugging is a lot easier if we know the index where the error happened
                 .enumerate()
-                .map(|(i, c)| {
-                    c.as_f64().unwrap_or_else(|| {
+                .map(|(i, element_inner)| {
+                    element_inner.as_f64().unwrap_or_else(|| {
                         traceback!(format!("Failed to parse index {i} into f64 in value"))
                             .with_extra_data(json!({
-                                "value": c
+                                "value": value,
+                                "value_element": value_element,
+                                "index": i,
+                                "element_inner": element_inner
                             }));
                         0.0
                     })
