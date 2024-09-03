@@ -82,27 +82,34 @@ fn map_to_vec(c: &Value) -> Result<Vec<Vec<f64>>, TracebackError> {
 /// * `Result<Vec<f64>, TracebackError>` - A `Result` containing the vector of floating-point numbers if the conversion is successful,
 /// or an error message as a `TracebackError` if the input is not an array or if the values cannot be parsed as floating-point numbers.
 fn map_to_vec_inner(value: &Value) -> Result<Vec<f64>, TracebackError> {
-    value.as_array()
-        .ok_or_else(|| {
-            traceback!("Expected an array as a parameter").with_extra_data(json!({ "value": value }))
-        })
-        .map(|value_element| {
-            value_element.iter()
-                // enumerate really isn't necessary here
-                // but debugging is a lot easier if we know the index where the error happened
-                .enumerate()
-                .map(|(i, element_inner)| {
-                    element_inner.as_f64().unwrap_or_else(|| {
-                        traceback!(format!("Failed to parse index {i} into f64 in value"))
-                            .with_extra_data(json!({
-                                "value": value,
-                                "value_element": value_element,
-                                "index": i,
-                                "element_inner": element_inner
-                            }));
-                        0.0
-                    })
-                })
-                .collect()
-        })
+    // Check if the value is an array
+    let value_array = match value.as_array() {
+        Some(array) => array,
+        None => {
+            return Err(traceback!("Expected an array as a parameter")
+                .with_extra_data(json!({ "value": value })));
+        }
+    };
+
+    let mut result_vec = Vec::new();
+
+    // Iterate over the array elements
+    for (i, element_inner) in value_array.iter().enumerate() {
+        // Try to convert the element to f64
+        match element_inner.as_f64() {
+            Some(number) => result_vec.push(number),
+            None => {
+                // If conversion fails, log the error and continue
+                return Err(traceback!(format!("Failed to parse index {i} into f64 in value"))
+                    .with_extra_data(json!({
+                        "value": value_array,
+                        "index": i,
+                        "element_inner": element_inner
+                    })));
+            }
+        }
+    }
+
+    // Return the vector as a Result
+    Ok(result_vec)
 }
