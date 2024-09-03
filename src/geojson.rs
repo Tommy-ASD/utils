@@ -36,7 +36,14 @@ use traceback_error::{
 /// }
 /// ```
 pub fn coords_to_vec(coordinates: &Vec<Value>) -> Result<Vec<Vec<Vec<f64>>>, TracebackError> {
-    coordinates.iter().map(|c| map_to_vec(c)).collect()
+    let mut result = vec![];
+    for coordinate in coordinates {
+        match map_to_vec(coordinate) {
+            Ok(val) => result.push(val),
+            Err(e) => return Err(traceback!(err e).with_extra_data(json!({"coords": coordinates})))
+        }
+    }
+    Ok(result)
 }
 
 /// Helper function that converts a JSON `Value` object to a vector of vectors of floating-point numbers.
@@ -49,11 +56,20 @@ pub fn coords_to_vec(coordinates: &Vec<Value>) -> Result<Vec<Vec<Vec<f64>>>, Tra
 /// * `Result<Vec<Vec<f64>>, TracebackError>` - A `Result` containing the vector of vectors if the conversion is successful,
 /// or an error message as a `TracebackError` if the input is not an array.
 fn map_to_vec(c: &Value) -> Result<Vec<Vec<f64>>, TracebackError> {
-    c.as_array()
-        .ok_or_else(|| {
-            traceback!("Expected an array as a parameter").with_extra_data(json!({ "c": c }))
-        })
-        .and_then(|a| a.iter().map(map_to_vec_inner).collect())
+    let c_array = match c.as_array() {
+        Some(ok) => ok,
+        None => return Err(traceback!("Expected an array as a parameter").with_extra_data(json!({ "c": c })))
+    };
+    let mut result = vec![];
+    for element in c_array {
+        match map_to_vec_inner(element) {
+            Ok(v) => result.push(v),
+            Err(e) => return Err(traceback!(err e).with_extra_data(json!({
+                "c_array": c_array
+            })))
+        }
+    }
+    Ok(result)
 }
 
 /// Helper function that converts a JSON `Value` object to a vector of floating-point numbers.
